@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -68,6 +69,15 @@ int main(void)
 
     buffer[bytes_received] = '\0';
     printf("Received: %s\n", buffer);
+
+    char response[] = "Hello from the server";
+
+    if (send(client_fd, response, strlen(response), 0) == -1) {
+        perror("send");
+        return 1;
+    }
+
+    printf("Response sent.\n");
 
     return 0;
     }
