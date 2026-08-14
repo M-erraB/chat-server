@@ -2,6 +2,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 int main(void)
 {
@@ -45,39 +46,42 @@ int main(void)
 
     printf("Server listening on port 8080...\n");
 
-    //Accept clients
+    // Accept clients forever.
+    while (1) {
+        // File descriptor used to reference the connected client.
+        int client_fd = accept(server_fd, NULL, NULL);
 
-    //File descriptor used to reference the client
-    int client_fd;
-    client_fd = accept(server_fd, NULL, NULL);
-
-    if (client_fd == -1) {
+        if (client_fd == -1) {
         perror("accept");
-        return 1;
+        continue;
+        }
+
+        printf("Client connected successfully. Client socket: %d\n", client_fd);
+
+        char buffer[1024];
+        int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+
+        if (bytes_received == -1) {
+            perror("recv");
+            close(client_fd);
+            continue;
+        }
+
+        buffer[bytes_received] = '\0';
+
+        printf("Received: %s\n", buffer);
+
+        char response[] = "Hello from the server";
+
+        if (send(client_fd, response, strlen(response), 0) == -1) {
+            perror("send");
+        }
+
+        printf("Response sent.\n");
+
+        close(client_fd);
     }
-    printf("Client connected successfully. Client socket: %d\n", client_fd);
 
-    char buffer[1024];
-    int bytes_received;
+return 0;
 
-    bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-
-    if (bytes_received == -1) {
-    perror("recv");
-    return 1;
-    }
-
-    buffer[bytes_received] = '\0';
-    printf("Received: %s\n", buffer);
-
-    char response[] = "Hello from the server";
-
-    if (send(client_fd, response, strlen(response), 0) == -1) {
-        perror("send");
-        return 1;
-    }
-
-    printf("Response sent.\n");
-
-    return 0;
-    }
+}
