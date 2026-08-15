@@ -1,6 +1,6 @@
 # Multithreaded TCP Chat Server
 
-A TCP chat application consisting of a multithreaded server written in C and a client written in Python. The server accepts multiple simultaneous connections and broadcasts messages between connected clients.
+A TCP chat application consisting of a multithreaded server written in C and a client written in Python. The server supports multiple simultaneous connections and real-time message broadcasting between connected clients.
 
 ## Features
 
@@ -90,14 +90,6 @@ gcc -Wall -Wextra -Wpedantic server.c -o server -pthread
 ./server
 ```
 
-Expected output:
-
-```text
-Server socket created: 3
-Server bound to port 8080.
-Server listening on port 8080...
-```
-
 ### Start a client
 
 Open a separate terminal for each client.
@@ -108,23 +100,9 @@ cd client
 python3 client.py
 ```
 
-Example:
+### Example Chat Session
 
-```text
-Connected to the server.
-
-Enter your username: J
-```
-
-### Send messages
-
-```text
-You: Hello, everyone!
-```
-
-## Example Chat Session
-
-### Client 1
+**Client 1**
 
 ```text
 Connected to the server.
@@ -138,7 +116,7 @@ J: Hey H, I'm J
 *** J left the chat. ***
 ```
 
-### Client 2
+**Client 2**
 
 ```text
 Connected to the server.
@@ -153,6 +131,7 @@ You: Hey H, I'm J
 ## Implementation Details
 
 - Thread-per-client architecture implemented with `pthread_create()`
+- Connected clients are stored in a shared global client array
 - A shared client registry protected by a mutex
 - Message broadcasting between connected clients
 - Automatic cleanup of disconnected clients
