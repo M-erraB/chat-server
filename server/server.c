@@ -12,6 +12,19 @@ void *handle_client(void *arg) {
     free(arg);
 
     printf("Client connected. Client socket: %d\n", client_fd);
+    
+    char username[50];
+
+    int username_bytes = recv(client_fd, username, sizeof(username) - 1, 0);
+
+    if (username_bytes <= 0) {
+    close(client_fd);
+    return NULL;
+    }
+
+    username[username_bytes] = '\0';
+
+    printf("%s joined the chat.\n", username);
 
     while (1) {
         char buffer[1024];
@@ -30,7 +43,7 @@ void *handle_client(void *arg) {
 
         buffer[bytes_received] = '\0';
 
-        printf("Received: %s\n", buffer);
+        printf("%s: %s\n", username, buffer);
 
         char response[] = "Message received";
 
