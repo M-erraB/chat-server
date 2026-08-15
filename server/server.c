@@ -1,9 +1,49 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <pthread.h>
 
+void *handle_client(void *arg) {
+    int client_fd = *(int *)arg;
+
+    free(arg);
+
+    printf("Client connected. Client socket: %d\n", client_fd);
+
+    while (1) {
+        char buffer[1024];
+
+        int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+
+        if (bytes_received == -1) {
+            perror("recv");
+            break;
+        }
+
+        if (bytes_received == 0) {
+            printf("Client disconnected.\n");
+            break;
+        }
+
+        buffer[bytes_received] = '\0';
+
+        printf("Received: %s\n", buffer);
+
+        char response[] = "Message received";
+
+        if (send(client_fd, response, strlen(response), 0) == -1) {
+            perror("send");
+            break;
+        }
+    }
+
+    close(client_fd);
+
+    return NULL;
+}
 int main(void)
 {
     // File descriptor used to reference the server socket.
@@ -45,60 +85,32 @@ int main(void)
     printf("Server listening on port 8080...\n");
 
     // Keep the server running forever.
-    while (1)
-    {
-        // Create a new socket for the connected client.
-        int client_fd = accept(server_fd, NULL, NULL);
+    while (1) {
+    int client_fd = accept(server_fd, NULL, NULL);
 
-        // Check whether accept() failed.
-        if (client_fd == -1) {
-            perror("accept");
-            continue;
-        }
-
-        printf("Client connected. Client socket: %d\n", client_fd);
-
-        // Keep communicating with this client until it disconnects.
-        while (1)
-        {
-            // Buffer used to store incoming messages.
-            char buffer[1024];
-
-            // Receive data from the client.
-            int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-
-            // recv() returns -1 if an error occurs.
-            if (bytes_received == -1) {
-                perror("recv");
-                break;
-            }
-
-            // recv() returns 0 if the client disconnects.
-            if (bytes_received == 0)
-            {
-                printf("Client disconnected.\n");
-                break;
-            }
-
-            // Add a null terminator to the received data.
-            buffer[bytes_received] = '\0';
-
-            // Print the client's message.
-            printf("Received: %s\n", buffer);
-
-            // Message sent back to the client.
-            char response[] = "Message received";
-
-            // Send a response to the client.
-            if (send(client_fd, response, strlen(response), 0) == -1){
-                perror("send");
-                break;
-            }
-        }
-
-        // Close the connected client's socket.
-        close(client_fd);
+    if (client_fd == -1) {
+        perror("accept");
+        continue;
     }
+
+    int *client_ptr = malloc(sizeof(int));
+
+    *client_ptr = client_fd;
+
+    pthread_t thread;
+
+    if (pthread_create(&thread, NULL, handle_client, client_ptr) != 0) {
+        perror("pthread_create");
+
+        close(client_fd);
+
+        free(client_ptr);
+
+        continue;
+    }
+
+    pthread_detach(thread);
+}
 
     // Close the server socket.
     close(server_fd);
